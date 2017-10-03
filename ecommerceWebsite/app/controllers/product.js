@@ -6,6 +6,7 @@ var categoryModel=mongoose.model('category');
 var productModel=mongoose.model('product');
 var inventoryModel=mongoose.model('inventory');
 var reviewModel=mongoose.model('review');
+var userModel=mongoose.model('User');
 var responseGenerator=require('./../../libs/responseGenerator');
 var util=require('./../../middleWares/utils');
 module.exports.controllerFunction=function(app){
@@ -109,6 +110,23 @@ module.exports.controllerFunction=function(app){
 			}
 			else{
 				res.send(foundparticularProduct);
+			}
+		});
+	});
+
+
+	//API to get all review
+	productRouter.get('/allReview',function(req,res){
+		reviewModel.find({},function(err,foundAllReview){
+			if(err){
+				var myResponse=responseGenerator.generate(true,err,500,null);
+					res.render('error',{
+						message:myResponse.message,
+						error:myResponse.data
+					});
+			}
+			else{
+				res.send(foundAllReview);
 			}
 		});
 	}); 
@@ -263,15 +281,30 @@ module.exports.controllerFunction=function(app){
 
 
 	//API to create a review
-	productRouter.post('/review',function(req,res){
+	productRouter.post('/createReview',function(req,res){
 		var newReview=new reviewModel({
 			product_id:req.body.product_id,
 			review_title:req.body.review_title,
 			review_text:req.body.review_text,
 			submitted_by:req.body.submitted_by,
-			verified_customer:req.body.verified_customer,
+			//verified_customer:req.body.verified_customer,
 			rating:req.body.rating
 		});
+		userModel.findOne({'userName':req.body.submitted_by},function(err,currentUser){
+			if(err){
+				res.send(err);
+			}
+			else if(currentUser!=null){
+				newReview.verified_customer=true;
+			}
+			newReview.save(function(err){
+				if(err){
+					res.send(err);
+				}
+				res.send(newReview);
+			});
+		});
+		
 	});
 
 

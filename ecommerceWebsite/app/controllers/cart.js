@@ -1,6 +1,7 @@
 var mongoose=require('mongoose');
 var express=require('express');
 var cartModel=mongoose.model('cart');
+var userModel=mongoose.model('User');
 var inventoryModel=mongoose.model('inventory');
 var cartRouter=express.Router();
 var checkCondition=require('./../../middleWares/checkWithInventory');
@@ -8,23 +9,31 @@ module.exports.controllerFunction=function(app){
 
 
 	//API to add product to cart
+	//We have to send product_id,quantity to add product to cart 
 	cartRouter.post('/addProductToCart',checkCondition.checkWithInventory,function(req,res){
 		if(req.err==true){
 			res.send("error while adding product to cart "+req.errmsg);
 		}
 		var newCart=new cartModel({
-			user_id:req.session.user._id
+			userName:req.user.userName
 		});
 		productDetails={
 			product_id:req.body.product_id,
 			quantity  :req.body.quantity
 		}
-		cartModel.findOne({'user_id':req.session.user._id},function(err,cartObj){
-			if(err || null==cartObj){
+		cartModel.findOne({'userName':req.user.userName},function(err,cartObj){
+			if(err){
+				var myResponse=responseGenerator.generate(true,"error occurred while querying cartModel"+err,500,null);
+				res.render('error',{
+					message:myResponse.message,
+					error:myResponse.data
+				});
+			}
+			else if(null==cartObj){
 					newCart.cartProductDetails.push(productDetails);
 					newCart.save(function(err){
 						if(err){
-					var myResponse=responseGenerator.generate(true,"error occurred while adding product to cart"+err,500,null);
+					var myResponse=responseGenerator.generate(true,"error occurred while saving product to cart"+err,500,null);
 					res.render('error',{
 						message:myResponse.message,
 						error:myResponse.data
@@ -62,8 +71,9 @@ module.exports.controllerFunction=function(app){
 
 
 	//API to remove product from cart
+	//We have to send product_id and quantity to remove product from cart
 	cartRouter.post('/removeProductFromCart',function(req,res){
-		cartModel.findOne({'user_id':req.session.user._id},function(err,removedProduct){
+		cartModel.findOne({'userName':req.user.userName},function(err,removedProduct){
 			if(err){
 				res.send(err);
 			}

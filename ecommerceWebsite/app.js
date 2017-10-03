@@ -40,17 +40,11 @@ fs.readdirSync('./app/models').forEach(function(file){
 	}
 });
 
-//including controllers
-fs.readdirSync('./app/controllers').forEach(function(file){
-	if(file.indexOf('.js')){
-		var route=require('./app/controllers/'+file);
-		route.controllerFunction(app);
-	}
-});
 
 var auth=require('./middleWares/auth');
 var mongoose=require('mongoose');
 var userModel=mongoose.model('User');
+
 app.use(function(req,res,next){
 	if(req.session && req.session.user){
 		userModel.findOne({'email':req.session.user.email},function(err,user){
@@ -70,6 +64,15 @@ app.use(function(req,res,next){
 		next();
 	}
 });
+
+//including controllers
+fs.readdirSync('./app/controllers').forEach(function(file){
+	if(file.indexOf('.js')){
+		var route=require('./app/controllers/'+file);
+		route.controllerFunction(app);
+	}
+});
+
 
 app.use(function(err,req,res,next){
 	res.status(err || 500);
